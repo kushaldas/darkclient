@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+# Copyright 2011 Red Hat Inc.
+# Author: Kushal Das <kdas@redhat.com>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.  See http://www.gnu.org/copyleft/gpl.html for
+# the full text of the license.
+
+import sys
+import urllib2
+import json
+from optparse import OptionParser
+
+#TODO
+#This should go into a conf file
+URL = "http://example.com"
+
+def callback(option, opt_str, value, parser):
+    "Callback method"
+    args = []
+    for arg in parser.rargs:
+        if arg[0] != "-":
+            args.append(arg)
+        else:
+            del parser.rargs[:len(args)]
+            break
+    if getattr(parser.values, option.dest):
+        args.extend(getattr(parser.values, option.dest))
+    setattr(parser.values, option.dest, args)
+
+
+def dark_find_ids(ids):
+    """
+    Find the ids given and print the result
+    """
+    turl = URL + "/buildids/"
+    for gid in ids:
+        turl = turl + gid + ','
+        
+    turl = turl[:-1]
+    
+    try:
+        fileobj = urllib2.urlopen(turl)
+        textdata = fileobj.read()
+        fileobj.close()
+        data = json.loads(textdata)
+    except Exception, error:
+        print error.message
+        return 
+    
+    for text in data:
+        print text['buildid'], text['rpm'], print text['elf']
+        
+        print ''
+
+def dark_find_rpm(name):
+    """
+    Find the ids given and print the result
+    """
+    turl = URL + "/rpm2buildid/%s" % name
+    
+    try:
+        fileobj = urllib2.urlopen(turl)
+        textdata = fileobj.read()
+        fileobj.close()
+        data = json.loads(textdata)
+    except Exception, error:
+        print error.message
+        return 
+
+    for text in data:
+        print text[0], text[3], s/%s" % (text[1] , text[2]) 
+        print ''        
+        
+        
+def main(args):
+    """
+    Main function
+    """
+    parser = OptionParser()
+    parser.add_option('-i', '--ids', help="GNU BuildIDs", dest='ids', \
+                      action = 'callback', callback=callback)
+    parser.add_option("-r", "--rpm", dest="rpm", \
+                      help = "Name of the rpm file")
+    
+    (options, args) = parser.parse_args(args[1:])
+    if options.ids:
+        dark_find_ids(options.ids)
+        return 0
+    elif options.rpm:
+        dark_find_rpm(options.rpm)
+    else:
+        print "Please provide rpm or id details"
+    
+    return 0
+        
+    
+    
+if __name__ == '__main__':
+    main(sys.argv)

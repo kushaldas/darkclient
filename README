@@ -1,0 +1,6 @@
+README
+======
+
+darkclient is a command line tool to query darkserver service to get details
+of GNU build-id(s). This will produce output which will be easier for a shell
+script to parse.
