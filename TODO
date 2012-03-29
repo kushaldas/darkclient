@@ -1,0 +1,5 @@
+TODO
+====
+  * Having config file for server URL(s).
+  * Query multiple servers.
+  * Refactor the code.
