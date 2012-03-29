@@ -11,11 +11,24 @@
 import sys
 import urllib2
 import json
+import os
 from optparse import OptionParser
 
-#TODO
-#This should go into a conf file
-URL = "https://darkserver.fedoraproject.org"
+
+def geturls():
+    """
+    Read the config file and get the URL(s)
+    """
+    if os.path.isfile('./darkclient.conf'):
+        path = './darkclient.conf'
+    elif os.path.isfile('/etc/darkclient.conf'):
+        path = '/etc/darkclient.conf'
+    else:
+        return
+    data = None
+    with open(path) as fileobj:
+        data = fileobj.readlines()
+    return [line.strip('\n') for line in data]
 
 def callback(option, opt_str, value, parser):
     "Callback method"
@@ -44,37 +57,48 @@ def readurl(url):
         return
     return data
 
-def dark_find_ids(ids):
+def dark_find_ids(url, ids):
     """
     Find the ids given and print the result
     """
-    turl = URL + "/buildids/"
+    turl = url + "/buildids/"
     for gid in ids:
         turl = turl + gid + ','
 
     turl = turl[:-1]
+
     data = readurl(turl)
+
+    if not data:
+        return -1
+
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
 
-def dark_find_rpm(name):
+def dark_find_rpm(url, name):
     """
     Find the ids given and print the result
     """
-    turl = URL + "/rpm2buildids/%s" % name
+    turl = url + "/rpm2buildids/%s" % name
 
     data = readurl(turl)
+
+    if not data:
+        return -1
 
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
 
-def dark_find_package(name):
+def dark_find_package(url, name):
     """
     Find the download URL for the package
     """
-    turl = URL + "/package/%s" % name
+    turl = url + "/package/%s" % name
 
     data = readurl(turl)
+
+    if not data:
+        return -1
 
     if 'url' in data:
         print data['url']
@@ -94,13 +118,14 @@ def main(args):
                         dest='package')
 
     (options, args) = parser.parse_args(args[1:])
+    url = geturls()[0]
     if options.ids:
-        dark_find_ids(options.ids)
+        dark_find_ids(url, options.ids)
         return 0
     elif options.rpm:
-        dark_find_rpm(options.rpm)
+        dark_find_rpm(url, options.rpm)
     elif options.package:
-        dark_find_package(options.package)
+        dark_find_package(url, options.package)
     else:
         print "Please provide rpm or id details"
 
