@@ -30,6 +30,19 @@ def callback(option, opt_str, value, parser):
         args.extend(getattr(parser.values, option.dest))
     setattr(parser.values, option.dest, args)
 
+def readurl(url):
+    """
+    Reads the URL and returns decoded json objects
+    """
+    try:
+        fileobj = urllib2.urlopen(url)
+        textdata = fileobj.read()
+        fileobj.close()
+        data = json.loads(textdata)
+    except urllib2.URLError, error:
+        print error
+        return
+    return data
 
 def dark_find_ids(ids):
     """
@@ -40,16 +53,7 @@ def dark_find_ids(ids):
         turl = turl + gid + ','
 
     turl = turl[:-1]
-
-    try:
-        fileobj = urllib2.urlopen(turl)
-        textdata = fileobj.read()
-        fileobj.close()
-        data = json.loads(textdata)
-    except Exception, error:
-        print error.message
-        return
-
+    data = readurl(turl)
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
 
@@ -59,17 +63,21 @@ def dark_find_rpm(name):
     """
     turl = URL + "/rpm2buildids/%s" % name
 
-    try:
-        fileobj = urllib2.urlopen(turl)
-        textdata = fileobj.read()
-        fileobj.close()
-        data = json.loads(textdata)
-    except Exception, error:
-        print error.message
-        return
+    data = readurl(turl)
 
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
+
+def dark_find_package(name):
+    """
+    Find the download URL for the package
+    """
+    turl = URL + "/package/%s" % name
+
+    data = readurl(turl)
+
+    if 'url' in data:
+        print data['url']
 
 
 def main(args):
@@ -77,10 +85,13 @@ def main(args):
     Main function
     """
     parser = OptionParser()
-    parser.add_option('-i', '--ids', help="GNU BuildIDs", dest='ids', \
+    parser.add_option('-i', '--ids', help="GNU build-id(s)", dest='ids', \
                       action = 'callback', callback=callback)
     parser.add_option("-r", "--rpm", dest="rpm", \
-                      help = "Name of the rpm file")
+                      help = "Name of the rpm file to find build-id(s)")
+
+    parser.add_option('-p', '--package', help="Download URl for package", \
+                        dest='package')
 
     (options, args) = parser.parse_args(args[1:])
     if options.ids:
@@ -88,6 +99,8 @@ def main(args):
         return 0
     elif options.rpm:
         dark_find_rpm(options.rpm)
+    elif options.package:
+        dark_find_package(options.package)
     else:
         print "Please provide rpm or id details"
 
