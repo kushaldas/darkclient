@@ -4,3 +4,11 @@ README
 darkclient is a command line tool to query darkserver service to get details
 of GNU build-id(s). This will produce output which will be easier for a shell
 script to parse.
+
+
+Error Codes
+===========
+  * 1 : No data from server
+  * 2 : Problem in reading  the given URL
+  * 4 : No options specified
+  * 5 : Error reading configuration file
