@@ -25,7 +25,7 @@ def geturls():
         path = '/etc/darkclient.conf'
     else:
         return
-    data = None
+    data = 5
     with open(path) as fileobj:
         data = fileobj.readlines()
     return [line.strip('\n') for line in data]
@@ -53,8 +53,8 @@ def readurl(url):
         fileobj.close()
         data = json.loads(textdata)
     except urllib2.URLError, error:
-        print error
-        return
+        sys.stderr.write(error + '\n');
+        return '2'
     return data
 
 def dark_find_ids(url, ids):
@@ -68,12 +68,14 @@ def dark_find_ids(url, ids):
     turl = turl[:-1]
 
     data = readurl(turl)
-
-    if not data:
-        return -1
+    if data == 2:
+        return data
+    if len(data) == 0:
+        return 1
 
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
+    return 0
 
 def dark_find_rpm(url, name):
     """
@@ -83,11 +85,14 @@ def dark_find_rpm(url, name):
 
     data = readurl(turl)
 
+    if data == 2:
+        return data
     if not data:
-        return -1
+        return 1
 
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
+    return 0
 
 def dark_find_package(url, name):
     """
@@ -97,11 +102,17 @@ def dark_find_package(url, name):
 
     data = readurl(turl)
 
+    if data == 2:
+        return data
     if not data:
-        return -1
+        return 1
 
     if 'url' in data:
         print data['url']
+        return 0
+    else:
+        return 1
+
 
 
 def main(args):
@@ -118,20 +129,25 @@ def main(args):
                         dest='package')
 
     (options, args) = parser.parse_args(args[1:])
-    url = geturls()[0]
-    if options.ids:
-        dark_find_ids(url, options.ids)
-        return 0
-    elif options.rpm:
-        dark_find_rpm(url, options.rpm)
-    elif options.package:
-        dark_find_package(url, options.package)
+    url = geturls()
+    if url != 5:
+        url = url[0]
     else:
-        print "Please provide rpm or id details"
+        sys.exit(url)
+    code = 4
+    if options.ids:
+        code = dark_find_ids(url, options.ids)
+    elif options.rpm:
+        code = dark_find_rpm(url, options.rpm)
+    elif options.package:
+        code = dark_find_package(url, options.package)
+    else:
+        sys.stderr.write("Please provide rpm or id details\n")
 
-    return 0
+    return code
 
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    code = main(sys.argv)
+    sys.exit(code)
