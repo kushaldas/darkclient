@@ -13,6 +13,6 @@ setup(name='darkclient',
       url="https://github.com/kushaldas/darkclient",
       license = "http://www.gnu.org/copyleft/gpl.html",
       data_files=[("/usr/bin",['darkclient']),
-          ('/usr/share/darkclient', ['README', 'LICENSE']),
+          ('/usr/share/darkclient', ['README']),
           ('/etc/',['darkclient.conf'])]
       )
