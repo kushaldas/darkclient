@@ -14,6 +14,12 @@ import json
 import os
 from optparse import OptionParser
 
+class DarkError:
+    CONFIG_ERROR = 5
+    NETWORK_ERROR = 2
+    OPTION_ERROR = 4
+    NODATA_ERROR = 1
+
 
 def geturls():
     """
@@ -25,7 +31,7 @@ def geturls():
         path = '/etc/darkclient.conf'
     else:
         return
-    data = 5
+    data = None
     with open(path) as fileobj:
         data = fileobj.readlines()
     return [line.strip('\n') for line in data]
@@ -47,15 +53,17 @@ def readurl(url):
     """
     Reads the URL and returns decoded json objects
     """
+    ret = 0
+    data = None
     try:
         fileobj = urllib2.urlopen(url)
         textdata = fileobj.read()
         fileobj.close()
         data = json.loads(textdata)
     except urllib2.URLError, error:
-        sys.stderr.write(error + '\n');
-        return '2'
-    return data
+        print error
+        ret = DarkError.NETWORK_ERROR
+    return data, ret
 
 def dark_find_ids(url, ids):
     """
@@ -67,11 +75,12 @@ def dark_find_ids(url, ids):
 
     turl = turl[:-1]
 
-    data = readurl(turl)
-    if data == 2:
-        return data
+    data, ret = readurl(turl)
+    if ret != 0:
+        return ret
+
     if len(data) == 0:
-        return 1
+        return DarkError.NODATA_ERROR
 
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
@@ -83,12 +92,12 @@ def dark_find_rpm(url, name):
     """
     turl = url + "/rpm2buildids/%s" % name
 
-    data = readurl(turl)
+    data, ret = readurl(turl)
 
-    if data == 2:
-        return data
+    if ret != 0:
+        return ret
     if not data:
-        return 1
+        return DarkError.NODATA_ERROR
 
     for text in data:
         print text['buildid'], text['rpm'], text['elf']
@@ -100,18 +109,19 @@ def dark_find_package(url, name):
     """
     turl = url + "/package/%s" % name
 
-    data = readurl(turl)
+    data, ret = readurl(turl)
 
-    if data == 2:
-        return data
+    if ret != 0:
+        return ret
     if not data:
-        return 1
+        return DarkError.NODATA_ERROR
+
 
     if 'url' in data:
         print data['url']
         return 0
     else:
-        return 1
+        return DarkError.NODATA_ERROR
 
 
 
@@ -130,11 +140,11 @@ def main(args):
 
     (options, args) = parser.parse_args(args[1:])
     url = geturls()
-    if url != 5:
+    if url != None:
         url = url[0]
     else:
-        sys.exit(url)
-    code = 4
+        sys.exit(DarkError.CONFIG_ERROR)
+    code = DarkError.OPTION_ERROR
     if options.ids:
         code = dark_find_ids(url, options.ids)
     elif options.rpm:
