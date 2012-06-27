@@ -135,7 +135,7 @@ def main(args):
     parser.add_option("-r", "--rpm", dest="rpm", \
                       help = "Name of the rpm file to find build-id(s)")
 
-    parser.add_option('-p', '--package', help="Download URl for package", \
+    parser.add_option('-p', '--package', help="Download URL for package", \
                         dest='package')
 
     (options, args) = parser.parse_args(args[1:])
